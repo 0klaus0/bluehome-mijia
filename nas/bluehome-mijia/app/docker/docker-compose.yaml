@@ -1,0 +1,24 @@
+services:
+  bluehome:
+    image: python:3.12-slim
+    container_name: bluehome-mijia
+    restart: unless-stopped
+    environment:
+      BLUEHOME_DATA_DIR: /data
+      BLUEHOME_PUBLIC_HOST: auto
+      BLUEHOME_NO_BROWSER: "1"
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "${TRIM_SERVICE_PORT}:4174"
+    volumes:
+      - "${TRIM_APPDEST}/bluehome:/opt/bluehome:ro"
+      - "${TRIM_PKGVAR}:/data"
+    working_dir: /opt/bluehome
+    command:
+      - sh
+      - -c
+      - |
+        if [ ! -f /data/.deps-v1 ]; then
+          pip install --no-cache-dir --target /data/site -r server/requirements.txt && touch /data/.deps-v1 || exit 1
+        fi
+        PYTHONPATH=/data/site exec python -u server/connect_mijia.py --lan

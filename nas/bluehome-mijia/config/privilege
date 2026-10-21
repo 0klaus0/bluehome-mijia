@@ -1,0 +1,8 @@
+{
+    "defaults":
+    {
+        "run-as": "package"
+    },
+    "username": "docker-bluehome-mijia",
+    "groupname": "docker-bluehome-mijia"
+}

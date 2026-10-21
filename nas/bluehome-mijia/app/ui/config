@@ -1,0 +1,13 @@
+{
+  ".url": {
+    "bluehome-mijia.main": {
+      "title": "栖居 Bluehome",
+      "icon": "images/icon_{0}.png",
+      "type": "url",
+      "protocol": "http",
+      "port": "4174",
+      "url": "/app/",
+      "allUsers": true
+    }
+  }
+}

@@ -1,0 +1,11 @@
+services:
+  bluehome:
+    build: .
+    container_name: bluehome
+    restart: unless-stopped
+    environment:
+      BLUEHOME_PUBLIC_HOST: ${BLUEHOME_NAS_IP:?请在 .env 填写 NAS 的局域网 IPv4 地址}
+    ports:
+      - "4174:4174"
+    volumes:
+      - ./data:/data

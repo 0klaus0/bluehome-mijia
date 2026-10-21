@@ -1,0 +1,11 @@
+#!/bin/bash
+case "$1" in
+  start|stop) exit 0 ;;
+  status)
+    if [ "$(docker inspect -f '{{.State.Running}}' bluehome-mijia 2>/dev/null)" = true ]; then
+      exit 0
+    fi
+    exit 3
+    ;;
+  *) exit 1 ;;
+esac

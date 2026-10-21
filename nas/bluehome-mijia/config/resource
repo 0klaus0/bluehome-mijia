@@ -1,0 +1,7 @@
+{
+  "docker-project": {
+    "projects": [
+      {"name": "bluehome-mijia", "path": "docker"}
+    ]
+  }
+}
