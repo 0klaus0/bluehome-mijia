@@ -14,7 +14,7 @@ Android APK 使用本地调试签名，只供侧载测试。正式发布需长�
 
 ## 飞牛 NAS 安装
 
-1. 在飞牛应用中心启用 Docker，并用“手动安装应用”选择 `bluehome-mijia-1.0.0.fpk`。应用第一次启动会拉取多架构 `python:3.12-slim` 镜像，并联网安装 `mijiaAPI` 等依赖。
+1. 在飞牛应用中心启用 Docker，并用“手动安装应用”选择最新的 `bluehome-mijia-1.0.1.fpk`。应用第一次启动会拉取多架构 `python:3.12-slim` 镜像，并联网安装 `mijiaAPI` 等依赖。已有 1.0.0 可直接升级，应用数据目录中的米家登录凭据会保留。
 2. 在飞牛 Docker 中打开 `bluehome-mijia` 容器日志，找到“局域网配对码”。在 Windows 浏览器访问 `http://NAS局域网IP:4174/`，输入配对码，然后用手机米家 App 扫描登录二维码并确认。
 3. 在 Android App 中输入 NAS 的局域网 IPv4 地址并配对。NAS 保持运行后，Windows 可以关机。重启容器会更换配对码；米家登录凭据保存在飞牛应用数据目录。
 

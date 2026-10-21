@@ -21,5 +21,5 @@ try {
 } finally { Pop-Location }
 $fpk = Join-Path $package 'bluehome-mijia.fpk'
 if (-not (Test-Path -LiteralPath $fpk)) { throw '未找到 fnpack 产物' }
-Copy-Item -LiteralPath $fpk -Destination (Join-Path $root 'dist/bluehome-mijia-1.0.0.fpk') -Force
-Write-Host "飞牛安装包: $(Join-Path $root 'dist/bluehome-mijia-1.0.0.fpk')"
+Copy-Item -LiteralPath $fpk -Destination (Join-Path $root 'dist/bluehome-mijia-1.0.1.fpk') -Force
+Write-Host "飞牛安装包: $(Join-Path $root 'dist/bluehome-mijia-1.0.1.fpk')"

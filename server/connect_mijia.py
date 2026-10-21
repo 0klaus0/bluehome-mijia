@@ -184,9 +184,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_error(403)
 
     def do_POST(self):
-        if not self.valid_host() or self.headers.get('Origin') != 'http://' + self.headers.get('Host', ''):
+        if not self.valid_host():
             self.send_error(403);return
         if self.path == '/pair' and LAN_HOST and not self.local_client():
+            # The session pairing code protects this form. Some NAS launchers
+            # omit or rewrite Origin; do not apply the control API's Origin rule.
+            if self.headers.get('Sec-Fetch-Site') == 'cross-site':
+                self.send_error(403);return
             ip = self.client_address[0]
             recent = [t for t in PAIR_FAILURES.get(ip, []) if time.time()-t < 600]
             if len(recent) >= 8:
@@ -205,6 +209,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Set-Cookie','bluehome_pair='+PAIR_COOKIE+'; HttpOnly; SameSite=Strict; Path=/')
             self.send_header('Location','/app/')
             self.end_headers();return
+        if self.headers.get('Origin') != 'http://' + self.headers.get('Host', ''):
+            self.send_error(403);return
         if (self.path not in ('/control','/assistant','/model') or not bridge or not self.paired()
             or self.headers.get('X-Bluehome-Session')!=bridge.token):
             self.send_error(403);return
