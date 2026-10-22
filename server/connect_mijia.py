@@ -26,6 +26,9 @@ WEB = Path(getattr(sys, '_MEIPASS', ROOT.parent)) / 'web'
 PRIVATE = Path(os.environ['BLUEHOME_DATA_DIR']) if os.environ.get('BLUEHOME_DATA_DIR') else Path(os.environ.get('LOCALAPPDATA') or (Path.home() / '.bluehome')) / 'Bluehome'
 PRIVATE.mkdir(exist_ok=True)
 LAN_HOST = None
+TAILSCALE_RANGE = ipaddress.IPv4Network('100.64.0.0/10')
+def allowed_remote_host(address):
+    return (address.is_private and not address.is_loopback) or address in TAILSCALE_RANGE
 PAIR_CODE = f'{secrets.randbelow(100_000_000):08d}'
 PAIR_COOKIE = secrets.token_urlsafe(32)
 PAIR_FAILURES = {}
@@ -109,7 +112,7 @@ class Handler(BaseHTTPRequestHandler):
             return False
         try:
             address = ipaddress.IPv4Address(host.removesuffix(':4174'))
-            return address.is_private and not address.is_loopback and (LAN_HOST == 'auto' or host == f'{LAN_HOST}:4174')
+            return allowed_remote_host(address) and (LAN_HOST == 'auto' or host == f'{LAN_HOST}:4174')
         except ValueError:
             return False
 
@@ -144,6 +147,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self.paired():
             self.send_response(302)
             self.send_header('Location', '/pair')
+            self.send_header('Content-Length', '0')
+            self.send_header('Cache-Control', 'no-store')
             self.end_headers()
             return
         if self.path == '/':
@@ -210,6 +215,8 @@ class Handler(BaseHTTPRequestHandler):
             with lock:
                 destination = '/app/' if state.get('status') == 'ready' else '/'
             self.send_header('Location',destination)
+            self.send_header('Content-Length','0')
+            self.send_header('Cache-Control','no-store')
             self.end_headers();return
         if self.headers.get('Origin') != 'http://' + self.headers.get('Host', ''):
             self.send_error(403);return
@@ -256,10 +263,10 @@ if __name__ == '__main__':
         if LAN_HOST != 'auto':
             try:
                 address = ipaddress.IPv4Address(LAN_HOST)
-                if not address.is_private or address.is_loopback:
+                if not allowed_remote_host(address):
                     raise ValueError()
             except ValueError:
-                raise SystemExit('BLUEHOME_PUBLIC_HOST 必须是局域网 IPv4 地址或 auto')
+                raise SystemExit('BLUEHOME_PUBLIC_HOST 必须是局域网或 Tailscale IPv4 地址，或 auto')
     threading.Thread(target=run, daemon=True).start()
     print('栖居连接器: http://localhost:4174/', flush=True)
     if LAN_HOST:

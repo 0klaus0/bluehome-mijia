@@ -1,5 +1,5 @@
 appname=bluehome-mijia
-version=1.0.2
+version=1.0.3
 display_name=栖居 Bluehome
 desc=非官方米家家庭控制台，支持楼层与房间、红外推测状态和确认式智能助手。
 source=thirdparty

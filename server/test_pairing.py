@@ -60,6 +60,12 @@ class PairingTests(unittest.TestCase):
     def test_pairing_with_launcher_origin(self):
         self.assertEqual(self.post('/pair', {'Origin': 'http://192.168.1.5:5000'}), (303, '/'))
 
+    def test_tailscale_address_can_pair(self):
+        self.assertEqual(self.post('/pair', {'Host': '100.101.2.3:4174'}), (303, '/'))
+
+    def test_other_shared_address_is_rejected(self):
+        self.assertEqual(self.post('/pair', {'Host': '100.63.2.3:4174'})[0], 403)
+
     def test_ready_account_opens_dashboard(self):
         connect_mijia.state = {'status': 'ready'}
         try:
