@@ -95,7 +95,7 @@ def run():
             qr_png = None
             state = {'status': 'error', 'message': '连接未完成，可能是二维码过期或网络请求失败。', 'error_type': type(exc).__name__}
 
-PAGE = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>栖居 · 接入米家</title><style>body{margin:0;background:#f5f7fb;color:#253047;font:14px/1.8 "Microsoft YaHei",sans-serif}main{max-width:850px;margin:50px auto;padding:30px}section{background:white;border:1px solid #e6ebf4;border-radius:20px;padding:30px}h1{font-size:30px}small{color:#8a95a8}#qr{width:240px;max-width:100%;display:block;margin:20px auto}#login{text-align:center}a{color:#2563ff}</style><main><h1>栖居 · 接入米家</h1><section id="login"><h2 id="status">正在连接…</h2><img id="qr" hidden alt="米家登录二维码"><p>使用米家 App 扫码并在手机确认。</p><small>登录凭据只保存在当前连接器设备上。</small></section><p><a href="/app/">进入家庭控制台 ↗</a></p></main><script>const $=s=>document.querySelector(s);async function poll(){try{const s=await(await fetch('/state')).json();$('#status').textContent=s.message;if(s.status==='waiting'){$('#qr').src='/qr';$('#qr').hidden=false}else $('#qr').hidden=true;if(s.status==='ready'||s.status==='error')return}catch{$('#status').textContent='连接中断'}setTimeout(poll,2000)}poll();</script></html>'''
+PAGE = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>栖居 · 接入米家</title><style>body{margin:0;background:#f5f7fb;color:#253047;font:14px/1.8 "Microsoft YaHei",sans-serif}main{max-width:850px;margin:50px auto;padding:30px}section{background:white;border:1px solid #e6ebf4;border-radius:20px;padding:30px}h1{font-size:30px}small{color:#8a95a8}#qr{width:240px;max-width:100%;display:block;margin:20px auto}#login{text-align:center}a{color:#2563ff}</style><main><h1>栖居 · 接入米家</h1><section id="login"><h2 id="status">正在连接…</h2><img id="qr" hidden alt="米家登录二维码"><p>使用米家 App 扫码并在手机确认。</p><small>登录凭据只保存在当前连接器设备上。</small></section><p><a href="/app/">进入家庭控制台 ↗</a></p></main><script>const $=s=>document.querySelector(s);async function poll(){try{const s=await(await fetch('/state',{cache:'no-store'})).json();$('#status').textContent=s.message;if(s.status==='waiting'){$('#qr').src='/qr';$('#qr').hidden=false}else $('#qr').hidden=true;if(s.status==='ready'){location.replace('/app/');return}if(s.status==='error')return}catch{$('#status').textContent='连接中断'}setTimeout(poll,2000)}poll();</script></html>'''
 PAIR_PAGE = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>栖居 · 手机配对</title><style>body{font:15px/1.8 sans-serif;background:#f5f8fd;color:#30435e;padding:35px}main{max-width:420px;margin:10vh auto;background:#fff;border-radius:20px;padding:28px;box-shadow:0 15px 50px #20375512}input,button{font:inherit;width:100%;padding:12px;border-radius:9px;margin:8px 0}input{border:1px solid #d8e3f3}button{border:0;background:#2563ff;color:white}small{color:#8598b0}</style><main><h1>连接栖居</h1><p>输入连接器日志中显示的八位配对码。</p><form method="post" action="/pair"><input name="code" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required autocomplete="one-time-code"><button>配对并进入</button></form><small>手机与连接器需处于同一可信局域网；连接器需保持运行。</small></main></html>'''
 
 class Handler(BaseHTTPRequestHandler):
@@ -207,7 +207,9 @@ class Handler(BaseHTTPRequestHandler):
             PAIR_FAILURES.pop(ip,None)
             self.send_response(303)
             self.send_header('Set-Cookie','bluehome_pair='+PAIR_COOKIE+'; HttpOnly; SameSite=Strict; Path=/')
-            self.send_header('Location','/app/')
+            with lock:
+                destination = '/app/' if state.get('status') == 'ready' else '/'
+            self.send_header('Location',destination)
             self.end_headers();return
         if self.headers.get('Origin') != 'http://' + self.headers.get('Host', ''):
             self.send_error(403);return

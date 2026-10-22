@@ -26,8 +26,10 @@ class PairingTests(unittest.TestCase):
     def setUpClass(cls):
         cls.previous_host = connect_mijia.LAN_HOST
         cls.previous_code = connect_mijia.PAIR_CODE
+        cls.previous_state = connect_mijia.state
         connect_mijia.LAN_HOST = 'auto'
         connect_mijia.PAIR_CODE = '12345678'
+        connect_mijia.state = {'status': 'waiting'}
         cls.server = connect_mijia.ThreadingHTTPServer(('127.0.0.1', 0), RemotePairHandler)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
@@ -39,6 +41,7 @@ class PairingTests(unittest.TestCase):
         cls.thread.join()
         connect_mijia.LAN_HOST = cls.previous_host
         connect_mijia.PAIR_CODE = cls.previous_code
+        connect_mijia.state = cls.previous_state
 
     def post(self, path, headers=None):
         connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port)
@@ -52,10 +55,17 @@ class PairingTests(unittest.TestCase):
         return result
 
     def test_pairing_without_origin(self):
-        self.assertEqual(self.post('/pair'), (303, '/app/'))
+        self.assertEqual(self.post('/pair'), (303, '/'))
 
     def test_pairing_with_launcher_origin(self):
-        self.assertEqual(self.post('/pair', {'Origin': 'http://192.168.1.5:5000'}), (303, '/app/'))
+        self.assertEqual(self.post('/pair', {'Origin': 'http://192.168.1.5:5000'}), (303, '/'))
+
+    def test_ready_account_opens_dashboard(self):
+        connect_mijia.state = {'status': 'ready'}
+        try:
+            self.assertEqual(self.post('/pair'), (303, '/app/'))
+        finally:
+            connect_mijia.state = {'status': 'waiting'}
 
     def test_cross_site_pairing_is_rejected(self):
         self.assertEqual(self.post('/pair', {'Sec-Fetch-Site': 'cross-site'})[0], 403)

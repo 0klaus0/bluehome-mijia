@@ -1,6 +1,41 @@
-// Read-only account inventory. Actual data stays in memory, outside distributable files.
+// Account inventory stays in memory, outside distributable files.
+let connectionSeen = false;
+function loadInventory() {
+ const script=document.createElement('script');
+ script.src='/inventory.js';
+ script.onload=()=>script.remove();
+ script.onerror=()=>{script.remove();if(connectionSeen)setTimeout(loadInventory,3000)};
+ document.head.append(script);
+}
+function showConnection(status) {
+ const failed=status==='error';
+ document.querySelector('.sidebar-note').innerHTML='<span class="dot"></span> '+(failed?'米家连接失败':'正在接入米家')+'<p>请完成米家扫码登录</p>';
+ document.querySelector('.hero-text h2').textContent=failed?'米家连接需要重新检查。':'再完成一步，就能看见你的家。';
+ document.querySelector('.hero-text p').textContent='八位配对码只连接浏览器；请打开接入页，用米家 App 扫描二维码并确认。';
+ const action=document.querySelector('#relax');action.textContent='打开米家接入页 ↗';action.onclick=()=>location.assign('/');
+ document.querySelector('.hero-text small').textContent='完成扫码后会自动显示真实家庭与设备';
+ document.querySelector('.section-title h2').textContent='等待真实设备';
+ document.querySelector('.section-title p').textContent='米家登录完成后自动读取家庭、房间与设备';
+ document.querySelector('#about').setAttribute('aria-label','关于米家连接');
+ document.querySelector('#reset').hidden=true;
+ document.querySelector('#filters').hidden=true;
+ document.querySelector('#devices').hidden=true;
+ document.querySelector('.stats').hidden=true;
+ document.querySelectorAll('nav button:not([data-nav="home"])').forEach(button=>button.disabled=true);
+ document.querySelector('footer').textContent='● 等待米家账号连接 · 当前不发送设备指令';
+}
 window.receiveMijiaInventory = function(data) {
- if(data.status!=='ready')return;
+ connectionSeen=true;
+ if(data.status!=='ready'){
+  showConnection(data.status);
+  setTimeout(loadInventory,3000);
+  return;
+ }
+ document.querySelector('#reset').hidden=false;
+ document.querySelector('#filters').hidden=false;
+ document.querySelector('#devices').hidden=false;
+ document.querySelectorAll('nav button').forEach(button=>button.disabled=false);
+ document.querySelector('#about').setAttribute('aria-label','关于米家接入');
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let assignments={};try{assignments=JSON.parse(localStorage.getItem('bluehome-floors-v1'))||{}}catch{}
  let selectedHome=data.homes[0]?.name||'未分组/共享设备', selectedFloor='全部楼层', selectedRoom='全部房间';
@@ -47,4 +82,4 @@ window.receiveMijiaInventory = function(data) {
  if(window.initDeviceDashboard)window.initDeviceDashboard({data,floorOf,scope:()=>({home:selectedHome,floor:selectedFloor,room:selectedRoom}),choose:(home,floor,room)=>{selectedHome=home;selectedFloor=floor||'全部楼层';selectedRoom=room||'全部房间';render()}});
  render();
 };
-{const script=document.createElement('script');script.src='/inventory.js';script.onerror=()=>{};document.head.append(script)}
+loadInventory();
