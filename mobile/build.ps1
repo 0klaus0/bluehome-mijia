@@ -15,7 +15,7 @@ $classFiles = @(Get-ChildItem -LiteralPath $classes -Recurse -Filter '*.class' |
 & (Join-Path $tools 'd8.bat') --lib $platform --min-api 26 --output $dex $classFiles
 if ($LASTEXITCODE -ne 0) { throw 'D8 编译失败' }
 $unsigned = Join-Path $cache 'unsigned.apk'
-& (Join-Path $tools 'aapt2.exe') link -o $unsigned --manifest (Join-Path $PSScriptRoot 'AndroidManifest.xml') -I $platform --min-sdk-version 26 --target-sdk-version 34 --version-code 2 --version-name 0.1.1
+& (Join-Path $tools 'aapt2.exe') link -o $unsigned --manifest (Join-Path $PSScriptRoot 'AndroidManifest.xml') -I $platform --min-sdk-version 26 --target-sdk-version 34 --version-code 3 --version-name 0.1.2
 if ($LASTEXITCODE -ne 0) { throw 'Android 资源构建失败' }
 & jar uf $unsigned -C $dex classes.dex
 if ($LASTEXITCODE -ne 0) { throw 'APK 组装失败' }

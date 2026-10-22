@@ -7,20 +7,22 @@
 ## 可用版本
 
 - 飞牛 NAS：`nas/build.ps1` 用飞牛官方 fnpack 1.2.3 构建 Docker 型 `.fpk`。连接器常驻 NAS，电脑可以关机。
-- Android：`mobile/build.ps1` 构建侧载测试 APK。手机连接 NAS 的局域网 IP，或通过 Tailscale 连接 NAS 的 100.x 地址；首次需输入容器日志里的八位配对码。
+- Android：`mobile/build.ps1` 构建侧载测试 APK。手机可连接 NAS 的局域网 IP，或连接配置了 Cloudflare Tunnel 与 Access 的 HTTPS 域名；首次需输入容器日志里的八位配对码。
 - Windows：`desktop/build.ps1` 构建独立连接器。家中有 NAS 时，Windows 浏览器直接访问 `http://NAS局域网IP:4174/app/`；无需运行 Windows 连接器。
 
 Android APK 使用本地调试签名，只供侧载测试。正式发布需长期签名密钥。Android 8.0 及以上可安装。设备控制仍需米家网络服务；状态刷新受轮询间隔和设备规格限制。
 
 ## 飞牛 NAS 安装
 
-1. 在飞牛应用中心启用 Docker，并用“手动安装应用”选择最新的 `bluehome-mijia-1.0.3.fpk`。应用第一次启动会拉取多架构 `python:3.12-slim` 镜像，并联网安装 `mijiaAPI` 等依赖。已有旧版可直接升级，应用数据目录中的米家登录凭据会保留。
+1. 在飞牛应用中心启用 Docker，并用“手动安装应用”选择最新的 `bluehome-mijia-1.0.4.fpk`。应用第一次启动会拉取多架构 `python:3.12-slim` 镜像，并联网安装 `mijiaAPI` 等依赖。已有旧版可直接升级，应用数据目录中的米家登录凭据会保留。
 2. 在飞牛 Docker 中打开 `bluehome-mijia` 容器日志，找到“局域网配对码”。在 Windows 浏览器访问 `http://NAS局域网IP:4174/`，输入配对码。这一步仅配对浏览器；随后还需用手机米家 App 扫描接入页的二维码并确认，设备读取完成后控制台会自动打开。若直接进入 `/app/`，页面也会等待米家连接完成，不再展示演示设备。
 3. 在 Android App 中输入 NAS 的局域网 IPv4 地址并配对。NAS 保持运行后，Windows 可以关机。重启容器会更换配对码；米家登录凭据保存在飞牛应用数据目录。
 
 FPK 已通过 fnpack 打包校验。还需在你的飞牛设备上完成安装与实机启动验证。请不要把 4174 端口映射到公网；局域网连接使用 HTTP，仅适合可信的家庭 Wi‑Fi。
 
 也可使用仓库根目录 `compose.yaml` 手动部署在有 Docker Compose 的 NAS 上：复制 `.env.example` 为 `.env`，填入 NAS 局域网 IP，运行 `docker compose up -d --build`。这种方式与 FPK 二选一，避免占用同一个端口。
+
+若希望手机端完全不安装 VPN，可用已加入 Cloudflare 的自有域名配置 HTTPS 远程入口：在飞牛上运行 Cloudflare Tunnel，将专用子域名转发到 `http://NAS局域网IP:4174`，并在 Cloudflare Access 为该子域名启用仅允许本人邮箱的一次性验证码策略。飞牛容器环境变量 `BLUEHOME_HTTPS_HOST` 要设为该子域名（不带 `https://`、路径或端口），重启连接器后，Android App 填入 `https://子域名`。此模式的访问顺序是 Cloudflare Access 身份验证、栖居八位码配对、设备控制。请先完成 Access 限制，再启用公开域名；单独创建 Tunnel 会使网页入口向所有人可达。云端代理商会处理经过其网络的请求，请在使用前考虑家庭数据隐私。HTTPS 域名入口暂未在你的飞牛与手机上实测。
 
 ## 安全与数据
 
